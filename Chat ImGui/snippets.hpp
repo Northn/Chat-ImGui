@@ -1,31 +1,27 @@
 #pragma once
 
-std::string cp1251_to_utf8(const char* str)
-{
-	std::string res;
-	WCHAR* ures = NULL;
-	char* cres = NULL;
+std::string cp1251_to_utf8(std::string_view str) {
+    int result_w = MultiByteToWideChar(1251, 0, str.data(),
+        static_cast<int>(str.size()), NULL, 0);
+    if (result_w == 0)
+        return "";
 
-	int result_u = MultiByteToWideChar(1251, 0, str, -1, 0, 0);
-	if (result_u != 0)
-	{
-		ures = new WCHAR[result_u];
-		if (MultiByteToWideChar(1251, 0, str, -1, ures, result_u))
-		{
-			int result_c = WideCharToMultiByte(CP_UTF8, 0, ures, -1, 0, 0, 0, 0);
-			if (result_c != 0)
-			{
-				cres = new char[result_c];
-				if (WideCharToMultiByte(CP_UTF8, 0, ures, -1, cres, result_c, 0, 0))
-				{
-					res = cres;
-				}
-			}
-		}
-	}
+    std::wstring wres(result_w, '\0');
+    if (!MultiByteToWideChar(1251, 0, str.data(), static_cast<int>(str.size()),
+        wres.data(), result_w))
+        return "";
 
-	delete[] ures;
-	delete[] cres;
+    int result_c =
+        WideCharToMultiByte(CP_UTF8, 0, wres.data(),
+            static_cast<int>(wres.size()), NULL, 0, NULL, NULL);
+    if (result_c == 0)
+        return "";
 
-	return res;
+    std::string res(result_c, '\0');
+    if (!WideCharToMultiByte(CP_UTF8, 0, wres.data(),
+        static_cast<int>(wres.size()), res.data(), result_c,
+        0, 0))
+        return "";
+
+    return res;
 }

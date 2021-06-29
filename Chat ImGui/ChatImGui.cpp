@@ -172,7 +172,7 @@ void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText,
 		auto t = text.substr(0, a);
 		if (t.length() > 0)
 		{
-			auto t_ = cp1251_to_utf8(t.c_str());
+			auto t_ = cp1251_to_utf8(t);
 			ChatImGui::pushTextToBuffer(output, t_);
 		}
 
@@ -193,7 +193,7 @@ void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText,
 	}
 	if (text.length() > 0)
 	{
-		auto t_ = cp1251_to_utf8(text.c_str());
+		auto t_ = cp1251_to_utf8(text);
 		ChatImGui::pushTextToBuffer(output, t_);
 	}
 	gChat.mChatLines.push_back(output);
