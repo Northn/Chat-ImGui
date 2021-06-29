@@ -14,17 +14,16 @@ void ChatImGui::initialize()
 	mChatPageUpHook = new rtdhook(sampGetChatPageUpFuncPtr(), &CChat__PageUp, 6);
 	mChatPageDownHook = new rtdhook(sampGetChatPageDownFuncPtr(), &CChat__PageDown, 6);
 
-	// Nops
-	DWORD old_protection;
-	const uintptr_t* nops = sampGetChatNopsData();
-#define SAMP_OFFSET(id) (sampGetBase() + id)
-	VirtualProtect((LPVOID)(SAMP_OFFSET(nops[1])), nops[2], PAGE_EXECUTE_READWRITE, &old_protection);
+	{ // Nops
+		DWORD old_protection;
+		const uintptr_t* nops = sampGetChatNopsData();
+		const uintptr_t address = sampGetBase() + nops[1];
+		VirtualProtect((LPVOID)address, nops[2], PAGE_EXECUTE_READWRITE, &old_protection);
 
-	memset((void*)(SAMP_OFFSET(nops[1])), 0x90, nops[2]);
+		memset((void*)address, 0x90, nops[2]);
 
-	VirtualProtect((LPVOID)(SAMP_OFFSET(nops[1])), nops[2], old_protection, nullptr);
-#undef SAMP_OFFSET
-	// Nops
+		VirtualProtect((LPVOID)address, nops[2], old_protection, nullptr);
+	} // Nops
 
 	mChatConstrHook->install();
 	mChatOnLostDeviceHook->install();
