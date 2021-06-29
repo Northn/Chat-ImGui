@@ -82,24 +82,21 @@ int __fastcall CChat__OnLostDevice(void* ptr, void*)
 	return reinterpret_cast<int(__thiscall*)(void*)>(gChat.getOnLostDeviceHook()->getTrampoline())(ptr);
 }
 
-void ChatImGui::renderShadow(const char* text__)
+void ChatImGui::renderOutline(const char* text__)
 {
 	bool shadows = *reinterpret_cast<int*>(sampGetChatInfoPtr() + 0x8) == 2;
 
 	if (shadows)
 	{
 		auto pos = ImGui::GetCursorPos();
-		for (int i = 0; i < 2; i++)
-		{
-			ImGui::SetCursorPos(ImVec2(pos.x + i, pos.y));
-			ImGui::TextColored(ImVec4(0, 0, 0, 1), text__); // shadow
-			ImGui::SetCursorPos(ImVec2(pos.x - i, pos.y));
-			ImGui::TextColored(ImVec4(0, 0, 0, 1), text__); // shadow
-			ImGui::SetCursorPos(ImVec2(pos.x, pos.y + i));
-			ImGui::TextColored(ImVec4(0, 0, 0, 1), text__); // shadow
-			ImGui::SetCursorPos(ImVec2(pos.x, pos.y - i));
-			ImGui::TextColored(ImVec4(0, 0, 0, 1), text__); // shadow
-		}
+		ImGui::SetCursorPos(ImVec2(pos.x + 1, pos.y));
+		ImGui::TextColored(ImVec4(0, 0, 0, 1), text__);
+		ImGui::SetCursorPos(ImVec2(pos.x - 1, pos.y));
+		ImGui::TextColored(ImVec4(0, 0, 0, 1), text__);
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 1));
+		ImGui::TextColored(ImVec4(0, 0, 0, 1), text__);
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y - 1));
+		ImGui::TextColored(ImVec4(0, 0, 0, 1), text__);
 		ImGui::SetCursorPos(pos);
 	}
 }
@@ -115,14 +112,14 @@ void ChatImGui::renderLine(ChatImGui::chat_line_t& data)
 		{
 			if (*reinterpret_cast<bool*>(sampGetChatInfoPtr() + 12))
 			{
-				ChatImGui::renderShadow(line.timestamp);
+				ChatImGui::renderOutline(line.timestamp);
 				ImGui::TextColored(color, line.timestamp);
 				ImGui::SameLine(0.0f, 5.0f);
 			}
 		}
 		else
 		{
-			ChatImGui::renderShadow(line.text);
+			ChatImGui::renderOutline(line.text);
 			ImGui::TextColored(color, line.text);
 			ImGui::SameLine(0.0f, 0.0f);
 		}

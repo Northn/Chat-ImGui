@@ -35,7 +35,7 @@ public:
 	static inline void		pushTextToBuffer(ChatImGui::chat_line_t& line, std::string& text);
 	static inline void		pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string& timestamp);
 
-	static void				renderShadow(const char* text__);
+	static void				renderOutline(const char* text__);
 	static void				renderLine(ChatImGui::chat_line_t& data);
 
 	void					rebuildFonts();
