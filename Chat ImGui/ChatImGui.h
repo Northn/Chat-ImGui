@@ -17,7 +17,11 @@ private:
 	float				mWhereToScroll = 0.f;
 
 public:
-	struct chat_line_data_t { ImVec4* color = nullptr; char* text = nullptr; char* timestamp = nullptr; };
+	enum eLineMetadataType : uint8_t { COLOR, TIMESTAMP, TEXT };
+	struct chat_line_data_t {
+		eLineMetadataType type;
+		void* data;
+	};
 	typedef std::vector<chat_line_data_t> chat_line_t;
 	std::vector<chat_line_t>	mChatLines;
 
@@ -36,6 +40,7 @@ public:
 	static inline void		pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string& timestamp);
 
 	static void				renderOutline(const char* text__);
+	static void				renderText(ImVec4& color, void* data);
 	static void				renderLine(ChatImGui::chat_line_t& data);
 
 	void					rebuildFonts();

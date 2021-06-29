@@ -79,52 +79,53 @@ void ChatImGui::renderOutline(const char* text__)
 	}
 }
 
+void ChatImGui::renderText(ImVec4& color, void* data)
+{
+	auto text = reinterpret_cast<char*>(data);
+	ChatImGui::renderOutline(text);
+	ImGui::TextColored(color, text);
+	ImGui::SameLine(0.0f, 5.0f);
+}
+
 void ChatImGui::renderLine(ChatImGui::chat_line_t& data)
 {
 	ImVec4 color(1, 1, 1, 1);
 	for (auto& line : data)
 	{
-		if (line.color != nullptr)
-			color = *(line.color);
-		else if (line.timestamp != nullptr)
+		if (line.type == eLineMetadataType::COLOR)
+			color = *reinterpret_cast<ImVec4*>(line.data);
+		else if (line.type == eLineMetadataType::TIMESTAMP)
 		{
 			if (sampIsTimestampEnabled())
-			{
-				ChatImGui::renderOutline(line.timestamp);
-				ImGui::TextColored(color, line.timestamp);
-				ImGui::SameLine(0.0f, 5.0f);
-			}
+				renderText(color, line.data);
 		}
 		else
-		{
-			ChatImGui::renderOutline(line.text);
-			ImGui::TextColored(color, line.text);
-			ImGui::SameLine(0.0f, 0.0f);
-		}
+			renderText(color, line.data);
 	}
 	ImGui::NewLine();
 }
 
 void ChatImGui::pushColorToBuffer(ChatImGui::chat_line_t& line, ImVec4& color)
 {
-	line.push_back({ new ImVec4(color) });
+	line.push_back({ eLineMetadataType::COLOR, new ImVec4(color) });
 }
 
 void ChatImGui::pushTextToBuffer(ChatImGui::chat_line_t& line, std::string& text)
 {
 	char* out = new char[text.length() + 1];
-	text.copy(out, text.length());
-	out[text.length()] = '\0';
-	line.push_back({ nullptr, out });
+	auto len = text.copy(out, text.length());
+	out[len] = '\0';
+	line.push_back({ eLineMetadataType::TEXT, out });
 }
 
 void ChatImGui::pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string& timestamp)
 {
 	char* out = new char[timestamp.length() + 1];
-	timestamp.copy(out, timestamp.length());
-	out[timestamp.length()] = '\0';
-	line.push_back({ nullptr, nullptr, out });
+	auto len = timestamp.copy(out, timestamp.length());
+	out[len] = '\0';
+	line.push_back({ eLineMetadataType::TIMESTAMP, out });
 }
+
 
 void* __fastcall CChat__CChat(void* ptr, void*, IDirect3DDevice9* pDevice, void* pFontRenderer, const char* pChatLogPath)
 {
@@ -225,16 +226,15 @@ void __fastcall CChat__Render(void* ptr, void*)
 		static ImGuiListClipper clipper;
 		clipper.Begin(gChat.mChatLines.size());
 		while (clipper.Step())
-		{
 			for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
-			{
 				ChatImGui::renderLine(gChat.mChatLines[row]);
-			}
-		}
+
 		if (gChat.shouldWeScrollToBottom())
 		{
 			float current_scroll = ImGui::GetScrollY(), max_scroll = ImGui::GetScrollMaxY();
-			if (max_scroll - current_scroll > 150)
+			if (max_scroll - current_scroll > 300)
+				ImGui::SetScrollY(current_scroll + 30);
+			else if (max_scroll - current_scroll > 150)
 				ImGui::SetScrollY(current_scroll + 10);
 			else if (max_scroll - current_scroll > 0)
 				ImGui::SetScrollY(current_scroll + 5);
