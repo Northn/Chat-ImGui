@@ -61,32 +61,10 @@ void ChatImGui::rebuildFonts()
 	}
 }
 
-void* __fastcall CChat__CChat(void* ptr, void*, IDirect3DDevice9* pDevice, void* pFontRenderer, const char* pChatLogPath)
-{
-	void* CChat = reinterpret_cast<void* (__thiscall*)(void*, IDirect3DDevice9*, void*, const char*)>(gChat.getConstrHook()->getTrampoline())
-		(ptr, pDevice, pFontRenderer, pChatLogPath);
-
-	ImGui::CreateContext();
-	ImGui_ImplWin32_Init(GetActiveWindow());
-	ImGui_ImplDX9_Init(pDevice);
-
-	gChat.rebuildFonts();
-
-	return CChat;
-}
-
-int __fastcall CChat__OnLostDevice(void* ptr, void*)
-{
-	ImGui_ImplDX9_InvalidateDeviceObjects();
-
-	return reinterpret_cast<int(__thiscall*)(void*)>(gChat.getOnLostDeviceHook()->getTrampoline())(ptr);
-}
-
 void ChatImGui::renderOutline(const char* text__)
 {
-	bool shadows = *reinterpret_cast<int*>(sampGetChatInfoPtr() + 0x8) == 2;
 
-	if (shadows)
+	if (sampGetChatDisplayMode() == 2) // If outlines are enabled
 	{
 		auto pos = ImGui::GetCursorPos();
 		ImGui::SetCursorPos(ImVec2(pos.x + 1, pos.y));
@@ -110,7 +88,7 @@ void ChatImGui::renderLine(ChatImGui::chat_line_t& data)
 			color = *(line.color);
 		else if (line.timestamp != nullptr)
 		{
-			if (*reinterpret_cast<bool*>(sampGetChatInfoPtr() + 12))
+			if (sampIsTimestampEnabled())
 			{
 				ChatImGui::renderOutline(line.timestamp);
 				ImGui::TextColored(color, line.timestamp);
@@ -127,6 +105,39 @@ void ChatImGui::renderLine(ChatImGui::chat_line_t& data)
 	ImGui::NewLine();
 }
 
+void ChatImGui::pushColorToBuffer(ChatImGui::chat_line_t& line, ImVec4& color)
+{
+	line.push_back({ new ImVec4(color) });
+}
+
+void ChatImGui::pushTextToBuffer(ChatImGui::chat_line_t& line, std::string& text)
+{
+	char* out = new char[text.length() + 1];
+	text.copy(out, text.length());
+	out[text.length()] = '\0';
+	line.push_back({ nullptr, out });
+}
+
+void ChatImGui::pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string& timestamp)
+{
+	char* out = new char[timestamp.length() + 1];
+	timestamp.copy(out, timestamp.length());
+	out[timestamp.length()] = '\0';
+	line.push_back({ nullptr, nullptr, out });
+}
+
+void* __fastcall CChat__CChat(void* ptr, void*, IDirect3DDevice9* pDevice, void* pFontRenderer, const char* pChatLogPath)
+{
+	ImGui::CreateContext();
+	ImGui_ImplWin32_Init(GetActiveWindow());
+	ImGui_ImplDX9_Init(pDevice);
+
+	gChat.rebuildFonts();
+
+	return reinterpret_cast<void* (__thiscall*)(void*, IDirect3DDevice9*, void*, const char*)>(gChat.getConstrHook()->getTrampoline())
+		(ptr, pDevice, pFontRenderer, pChatLogPath);
+}
+
 void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText, const char* szPrefix, uint32_t textColor, uint32_t prefixColor)
 {
 	std::string text(szText);
@@ -140,7 +151,7 @@ void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText,
 		char time_[64];
 		std::time_t t = std::time(nullptr);
 
-		if (reinterpret_cast<size_t(*)(char*, size_t, char const*, struct tm const*)>(sampGetStrftimeFuncPtr())
+		if (reinterpret_cast<decltype(std::strftime)*>(sampGetStrftimeFuncPtr())
 			(time_, sizeof(time_), "[%H:%M:%S]", std::localtime(&t))
 		) {
 			std::string time__(time_);
@@ -208,7 +219,7 @@ void __fastcall CChat__Render(void* ptr, void*)
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	ImGui::SetNextWindowPos(ImVec2(36, 5));
-	ImGui::SetNextWindowSize(ImVec2(4096, (ImGui::GetTextLineHeightWithSpacing() * *reinterpret_cast<uint32_t*>(ptr) /* pagesize */) - 9));
+	ImGui::SetNextWindowSize(ImVec2(4096, (ImGui::GetTextLineHeightWithSpacing() * sampGetPagesize()) - 9));
 	if (ImGui::Begin("Chat ImGui", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar))
 	{
 		static ImGuiListClipper clipper;
@@ -240,33 +251,18 @@ void __fastcall CChat__Render(void* ptr, void*)
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 }
 
-void ChatImGui::pushColorToBuffer(ChatImGui::chat_line_t& line, ImVec4& color)
+int __fastcall CChat__OnLostDevice(void* ptr, void*)
 {
-	line.push_back({ new ImVec4(color) });
+	ImGui_ImplDX9_InvalidateDeviceObjects();
+
+	return reinterpret_cast<int(__thiscall*)(void*)>(gChat.getOnLostDeviceHook()->getTrampoline())(ptr);
 }
 
-void ChatImGui::pushTextToBuffer(ChatImGui::chat_line_t& line, std::string& text)
+int __fastcall CDXUTScrollBar__Scroll(void* ptr, void*, int nDelta)
 {
-	char* out = new char[text.length() + 1];
-	text.copy(out, text.length());
-	out[text.length()] = '\0';
-	line.push_back({ nullptr, out });
-}
-
-void ChatImGui::pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string& timestamp)
-{
-	char* out = new char[timestamp.length() + 1];
-	timestamp.copy(out, timestamp.length());
-	out[timestamp.length()] = '\0';
-	line.push_back({ nullptr, nullptr, out });
-}
-
-int __fastcall CDXUTScrollBar__Scroll(uintptr_t ptr, void*, int nDelta)
-{
-	int ret = reinterpret_cast<int(__thiscall*)(uintptr_t, int)>(gChat.getDXUTScrollHook()->getHookedFunctionAddress())(ptr, nDelta);
 	gChat.scrollTo(nDelta);
 
-	return ret;
+	return reinterpret_cast<int(__thiscall*)(void*, int)>(gChat.getDXUTScrollHook()->getHookedFunctionAddress())(ptr, nDelta);
 }
 
 int __fastcall CChat__ScrollToBottom(void* ptr, void*)

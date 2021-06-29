@@ -55,11 +55,11 @@ public:
 inline ChatImGui gChat;
 
 void* __fastcall CChat__CChat(void* ptr, void*, IDirect3DDevice9* pDevice, void* pFontRenderer, const char* pChatLogPath);
-int __fastcall CChat__OnLostDevice(void* ptr, void*);
-void __fastcall CChat__Render(void* ptr, void*);
 void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText, const char* szPrefix, uint32_t textColor, uint32_t prefixColor);
+void __fastcall CChat__Render(void* ptr, void*);
+int __fastcall CChat__OnLostDevice(void* ptr, void*);
 
-int __fastcall CDXUTScrollBar__Scroll(uintptr_t ptr, void*, int nDelta);
+int __fastcall CDXUTScrollBar__Scroll(void* ptr, void*, int nDelta);
 int __fastcall CChat__ScrollToBottom(void* ptr, void*);
 int __fastcall CChat__PageUp(void* ptr, void*);
 int __fastcall CChat__PageDown(void* ptr, void*);

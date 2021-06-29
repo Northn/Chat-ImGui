@@ -133,6 +133,21 @@ inline uintptr_t sampGetChatPageDownFuncPtr()
     return sampGetBase() + SAMP_OFFSET[12];
 }
 
+inline bool sampIsTimestampEnabled()
+{
+    return *reinterpret_cast<bool*>(sampGetChatInfoPtr() + 0xC);
+}
+
+inline int sampGetChatDisplayMode()
+{
+    return *reinterpret_cast<int*>(sampGetChatInfoPtr() + 0x8);
+}
+
+inline uint32_t sampGetPagesize()
+{
+    return *reinterpret_cast<uint32_t*>(sampGetChatInfoPtr());
+}
+
 #undef SAMP_OFFSET
 
 /*enum EntryType {
