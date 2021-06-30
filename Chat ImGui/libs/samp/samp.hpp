@@ -17,11 +17,11 @@ const uintptr_t samp_addressess[][13]
     {0x26E8C8, 0x67C00, 0x66A20, 0x67A50, 0x67737, 0xC5C00, 0x67460, 0xCA970, 0xC5B20, 0x66C78, 0x66C10, 0x66B50, 0x66BB0}        // SAMP_037_R3_1
 };
 
-const uintptr_t chat_nops[][3]
+const uintptr_t chat_nops[][2]
 {
-    // nop end, begin, size
-    {0x642EC, 0x6428C, 0x4B},
-    {0x6773C, 0x676DC, 0x4B}
+    // nop begin, size
+    {0x6428C, 0x4B},
+    {0x676DC, 0x4B}
 };
 
 inline uintptr_t sampGetBase()

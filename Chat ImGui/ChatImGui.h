@@ -36,11 +36,11 @@ public:
 	inline rtdhook*			getPageDownHook() { return mChatPageDownHook; }
 
 	static inline void		pushColorToBuffer(ChatImGui::chat_line_t& line, ImVec4& color);
-	static inline void		pushTextToBuffer(ChatImGui::chat_line_t& line, std::string& text);
-	static inline void		pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string& timestamp);
+	static inline void		pushTextToBuffer(ChatImGui::chat_line_t& line, std::string_view text, bool isTimestamp = false);
+	static inline void		pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string_view timestamp);
 
 	static void				renderOutline(const char* text__);
-	static void				renderText(ImVec4& color, void* data);
+	static void				renderText(ImVec4& color, void* data, bool isTimestamp = false);
 	static void				renderLine(ChatImGui::chat_line_t& data);
 
 	void					rebuildFonts();

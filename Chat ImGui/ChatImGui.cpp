@@ -17,12 +17,12 @@ void ChatImGui::initialize()
 	{ // Nops
 		DWORD old_protection;
 		const uintptr_t* nops = sampGetChatNopsData();
-		const uintptr_t address = sampGetBase() + nops[1];
-		VirtualProtect((LPVOID)address, nops[2], PAGE_EXECUTE_READWRITE, &old_protection);
+		void* address = reinterpret_cast<void*>(sampGetBase() + nops[0]);
+		VirtualProtect(address, nops[1], PAGE_EXECUTE_READWRITE, &old_protection);
 
-		memset((void*)address, 0x90, nops[2]);
+		memset(address, 0x90, nops[1]);
 
-		VirtualProtect((LPVOID)address, nops[2], old_protection, nullptr);
+		VirtualProtect(address, nops[1], old_protection, nullptr);
 	} // Nops
 
 	mChatConstrHook->install();
@@ -40,15 +40,15 @@ void ChatImGui::rebuildFonts()
 {
 	std::string fontPath(256, '\0');
 
-	if (SHGetSpecialFolderPathA(GetActiveWindow(), (LPSTR)(fontPath.c_str()), CSIDL_FONTS, false))
+	if (SHGetSpecialFolderPathA(GetActiveWindow(), (LPSTR)(fontPath.data()), CSIDL_FONTS, false))
 	{
 		fontPath.resize(fontPath.find('\0'));
 		auto fontName = std::string(sampGetChatFontName());
 		if (fontName == "Arial")
 			fontName += "Bd";
 		fontPath += "\\" + fontName + ".ttf";
-		auto io = ImGui::GetIO();
 
+		auto& io = ImGui::GetIO();
 		ImVector<ImWchar> ranges;
 		ImFontGlyphRangesBuilder builder;
 		builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
@@ -79,12 +79,12 @@ void ChatImGui::renderOutline(const char* text__)
 	}
 }
 
-void ChatImGui::renderText(ImVec4& color, void* data)
+void ChatImGui::renderText(ImVec4& color, void* data, bool isTimestamp)
 {
 	auto text = reinterpret_cast<char*>(data);
 	ChatImGui::renderOutline(text);
 	ImGui::TextColored(color, text);
-	ImGui::SameLine(0.0f, 5.0f);
+	ImGui::SameLine(0.0f, (isTimestamp ? 5.0f : 0.0f));
 }
 
 void ChatImGui::renderLine(ChatImGui::chat_line_t& data)
@@ -97,7 +97,7 @@ void ChatImGui::renderLine(ChatImGui::chat_line_t& data)
 		else if (line.type == eLineMetadataType::TIMESTAMP)
 		{
 			if (sampIsTimestampEnabled())
-				renderText(color, line.data);
+				renderText(color, line.data, true);
 		}
 		else
 			renderText(color, line.data);
@@ -110,22 +110,18 @@ void ChatImGui::pushColorToBuffer(ChatImGui::chat_line_t& line, ImVec4& color)
 	line.push_back({ eLineMetadataType::COLOR, new ImVec4(color) });
 }
 
-void ChatImGui::pushTextToBuffer(ChatImGui::chat_line_t& line, std::string& text)
+void ChatImGui::pushTextToBuffer(ChatImGui::chat_line_t& line, std::string_view text, bool isTimestamp)
 {
 	char* out = new char[text.length() + 1];
 	auto len = text.copy(out, text.length());
 	out[len] = '\0';
-	line.push_back({ eLineMetadataType::TEXT, out });
+	line.push_back({ (isTimestamp ? eLineMetadataType::TIMESTAMP : eLineMetadataType::TEXT), out });
 }
 
-void ChatImGui::pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string& timestamp)
+void ChatImGui::pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string_view timestamp)
 {
-	char* out = new char[timestamp.length() + 1];
-	auto len = timestamp.copy(out, timestamp.length());
-	out[len] = '\0';
-	line.push_back({ eLineMetadataType::TIMESTAMP, out });
+	pushTextToBuffer(line, timestamp, true);
 }
-
 
 void* __fastcall CChat__CChat(void* ptr, void*, IDirect3DDevice9* pDevice, void* pFontRenderer, const char* pChatLogPath)
 {
@@ -145,25 +141,25 @@ void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText,
 	ChatImGui::chat_line_t output;
 
 	uint8_t r_ = ((textColor >> 16) & 0xff), g_ = ((textColor >> 8) & 0xff), b_ = (textColor & 0xff);
-	ImVec4 color((float)r_ / 255.f, (float)g_ / 255, (float)b_ / 255, 1);
+	ImVec4 color((float)r_ / 255.f, (float)g_ / 255.f, (float)b_ / 255.f, 1);
 	ChatImGui::pushColorToBuffer(output, color);
 
 	{
-		char time_[64];
+		std::string time_(64, '\0');
 		std::time_t t = std::time(nullptr);
 
 		if (reinterpret_cast<decltype(std::strftime)*>(sampGetStrftimeFuncPtr())
-			(time_, sizeof(time_), "[%H:%M:%S]", std::localtime(&t))
+			(time_.data(), time_.size() + 1, "[%H:%M:%S]", std::localtime(&t))
 		) {
-			std::string time__(time_);
-			ChatImGui::pushTimestampToBuffer(output, time__);
+			time_.resize(time_.find('\0'));
+			ChatImGui::pushTimestampToBuffer(output, time_);
 		}
 	}
 
 	if (nType == 2)
 	{
 		uint8_t r_ = ((prefixColor >> 16) & 0xff), g_ = ((prefixColor >> 8) & 0xff), b_ = (prefixColor & 0xff);
-		ImVec4 colorPrefix((float)r_ / 255.f, (float)g_ / 255, (float)b_ / 255, 1);
+		ImVec4 colorPrefix((float)r_ / 255.f, (float)g_ / 255.f, (float)b_ / 255.f, 1);
 		ChatImGui::pushColorToBuffer(output, colorPrefix);
 		std::string prefix(szPrefix);
 		prefix += ": ";
@@ -192,7 +188,7 @@ void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText,
 		{
 			auto clr_ = stoi(clr.str(), nullptr, 16);
 			uint8_t r = ((clr_ >> 16) & 0xff), g = ((clr_ >> 8) & 0xff), b = (clr_ & 0xff);
-			color = ImVec4((float)r / 255.f, (float)g / 255, (float)b / 255, 1);
+			color = ImVec4((float)r / 255.f, (float)g / 255.f, (float)b / 255.f, 1);
 			ChatImGui::pushColorToBuffer(output, color);
 		}
 
@@ -232,13 +228,13 @@ void __fastcall CChat__Render(void* ptr, void*)
 		if (gChat.shouldWeScrollToBottom())
 		{
 			float current_scroll = ImGui::GetScrollY(), max_scroll = ImGui::GetScrollMaxY();
-			if (max_scroll - current_scroll > 300)
-				ImGui::SetScrollY(current_scroll + 30);
-			else if (max_scroll - current_scroll > 150)
-				ImGui::SetScrollY(current_scroll + 10);
-			else if (max_scroll - current_scroll > 0)
-				ImGui::SetScrollY(current_scroll + 5);
-			else if (max_scroll - current_scroll < 0)
+			if (max_scroll - current_scroll > 300.f)
+				ImGui::SetScrollY(current_scroll + 30.f);
+			else if (max_scroll - current_scroll > 150.f)
+				ImGui::SetScrollY(current_scroll + 10.f);
+			else if (max_scroll - current_scroll > 0.f)
+				ImGui::SetScrollY(current_scroll + 5.f);
+			else if (max_scroll - current_scroll < 0.f)
 				ImGui::SetScrollY(max_scroll);
 		}
 		else
