@@ -34,6 +34,19 @@ void ChatImGui::initialize()
 	mChatScrollToBottomHook->install();
 	mChatPageUpHook->install();
 	mChatPageDownHook->install();
+
+	std::thread([&]
+		{
+			uintptr_t sampChatInput = sampGetInputInfoPtr();
+			while (!sampChatInput)
+				sampChatInput = sampGetInputInfoPtr();
+
+			sampRegisterChatCommand("alphachat", CMDPROC__AlphaChat);
+
+			mChatAlphaEnabled = sampReadVariableFromConfig("alphachat");
+		}
+	).detach();
+
 }
 
 void ChatImGui::rebuildFonts()
@@ -43,7 +56,7 @@ void ChatImGui::rebuildFonts()
 	if (SHGetSpecialFolderPathA(GetActiveWindow(), (LPSTR)(fontPath.data()), CSIDL_FONTS, false))
 	{
 		fontPath.resize(fontPath.find('\0'));
-		auto fontName = std::string(sampGetChatFontName());
+		std::string fontName{ sampGetChatFontName() };
 		if (fontName == "Arial")
 			fontName += "Bd";
 		fontPath += "\\" + fontName + ".ttf";
@@ -217,6 +230,20 @@ void __fastcall CChat__Render(void* ptr, void*)
 	ImGui::NewFrame();
 	ImGui::SetNextWindowPos(ImVec2(36, 5));
 	ImGui::SetNextWindowSize(ImVec2(4096, (ImGui::GetTextLineHeightWithSpacing() * sampGetPagesize()) - 9));
+	if (gChat.isChatAlphaEnabled())
+	{
+		auto& alpha = ImGui::GetStyle().Alpha;
+		if (!sampIsChatInputEnabled())
+		{
+			if (alpha >= 0.8f)
+				alpha -= 0.005f;
+		}
+		else
+		{
+			if (alpha < 1.f)
+				alpha += 0.005f;
+		}
+	}
 	if (ImGui::Begin("Chat ImGui", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar))
 	{
 		static ImGuiListClipper clipper;
@@ -280,4 +307,18 @@ int __fastcall CChat__PageDown(void* ptr, void*)
 	gChat.scrollTo(15);
 
 	return reinterpret_cast<int(__thiscall*)(void*)>(gChat.getPageDownHook()->getTrampoline())(ptr);
+}
+
+void CMDPROC__AlphaChat(const char* text)
+{
+	gChat.switchChatAlphaState();
+	bool enabled = gChat.isChatAlphaEnabled();
+	std::string text_("-> Chat alpha ");
+	text_ += enabled ? "enabled" : "disabled";
+	CChat__AddEntry(reinterpret_cast<void*>(sampGetChatInfoPtr()), nullptr, (1 << 2), text_.c_str(), nullptr, 0xFF88AA62, 0);
+
+	sampSaveVariableToConfig("alphachat", enabled);
+
+	if (!enabled)
+		ImGui::GetStyle().Alpha = 1.f;
 }

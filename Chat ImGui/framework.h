@@ -11,3 +11,4 @@
 #include <regex>
 #include <shlobj_core.h>
 #include <vector>
+#include <thread>

@@ -13,6 +13,8 @@ private:
 	rtdhook*			mChatPageUpHook = nullptr;
 	rtdhook*			mChatPageDownHook = nullptr;
 
+	bool				mChatAlphaEnabled = false;
+
 	float				mCurrentFontSize = 18; // WIP, not sure if it's such a needy functionality
 	float				mWhereToScroll = 0.f;
 
@@ -55,6 +57,9 @@ public:
 	}
 	inline bool				shouldWeScrollToBottom() { return mWhereToScroll == 0.f; }
 	inline float			whereToScroll() { return mWhereToScroll; }
+
+	inline bool				isChatAlphaEnabled() { return mChatAlphaEnabled; }
+	inline void				switchChatAlphaState() { mChatAlphaEnabled = !mChatAlphaEnabled; }
 };
 
 inline ChatImGui gChat;
@@ -68,3 +73,5 @@ int __fastcall CDXUTScrollBar__Scroll(void* ptr, void*, int nDelta);
 int __fastcall CChat__ScrollToBottom(void* ptr, void*);
 int __fastcall CChat__PageUp(void* ptr, void*);
 int __fastcall CChat__PageDown(void* ptr, void*);
+
+void CMDPROC__AlphaChat(const char* text);

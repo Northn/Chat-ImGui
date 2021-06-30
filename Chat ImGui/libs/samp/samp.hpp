@@ -10,11 +10,13 @@ enum SAMPVER {
 	SAMP_037_R3_1
 };
 
-const uintptr_t samp_addressess[][13]
+typedef void(__cdecl* CMDPROC)(const char*);
+
+const uintptr_t samp_addressess[][18]
 {
-    // CChat, ::CChat, ::OnLostDevice, ::OnResetDevice, ::Draw->call ::Render, getChatFontName, ::AddEntry, ::Scroll->call DXUT__Scroll, ::ScrollToBottom, ::PageUp, ::PageDown
-    {0x21A0E4, 0x647B0, 0x635D0, 0x64600, 0x642E7, 0xB3D40, 0x64010, 0xB87E7, 0xB3C60, 0x63828, 0x637C0, 0x63700, 0x63760},       // SAMP_037_R1
-    {0x26E8C8, 0x67C00, 0x66A20, 0x67A50, 0x67737, 0xC5C00, 0x67460, 0xCA970, 0xC5B20, 0x66C78, 0x66C10, 0x66B50, 0x66BB0}        // SAMP_037_R3_1
+    // CChat, ::CChat, ::OnLostDevice, ::OnResetDevice, ::Draw->call ::Render, getChatFontName, ::AddEntry, ::Scroll->call DXUT__Scroll, ::ScrollToBottom, ::PageUp, ::PageDown, CInput, CInput::AddCommand, CConfig?, CConfig?::SaveVariable, , CConfig?::ReadVariable
+    {0x21A0E4, 0x647B0, 0x635D0, 0x64600, 0x642E7, 0xB3D40, 0x64010, 0xB87E7, 0xB3C60, 0x63828, 0x637C0, 0x63700, 0x63760, 0x21A0E8, 0x65AD0, 0x21A0E0, 0x624C0, 0x62250},       // SAMP_037_R1
+    {0x26E8C8, 0x67C00, 0x66A20, 0x67A50, 0x67737, 0xC5C00, 0x67460, 0xCA970, 0xC5B20, 0x66C78, 0x66C10, 0x66B50, 0x66BB0, 0x26E8CC, 0x69000, 0x26E8C4, 0x65910, 0x656A0}        // SAMP_037_R3_1
 };
 
 const uintptr_t chat_nops[][2]
@@ -146,6 +148,39 @@ inline int sampGetChatDisplayMode()
 inline uint32_t sampGetPagesize()
 {
     return *reinterpret_cast<uint32_t*>(sampGetChatInfoPtr());
+}
+
+inline uintptr_t sampGetInputInfoPtr()
+{
+    return *reinterpret_cast<uintptr_t*>(sampGetBase() + SAMP_OFFSET[13]);
+}
+
+inline int sampIsChatInputEnabled()
+{
+    return *reinterpret_cast<int*>(sampGetInputInfoPtr() + 0x14E0);
+}
+
+inline void sampRegisterChatCommand(const char* szName, CMDPROC handler)
+{
+    reinterpret_cast<void(__thiscall*)(uintptr_t, const char*, CMDPROC)>(sampGetBase() + SAMP_OFFSET[14])
+        (sampGetInputInfoPtr(), szName, handler);
+}
+
+inline uintptr_t sampGetConfigPtr()
+{
+    return *reinterpret_cast<uintptr_t*>(sampGetBase() + SAMP_OFFSET[15]);
+}
+
+inline void sampSaveVariableToConfig(const char* name, int value)
+{
+    reinterpret_cast<int(__thiscall*)(uintptr_t, const char*, int, int)>(sampGetBase() + SAMP_OFFSET[16])
+        (sampGetConfigPtr(), name, value, 0);
+}
+
+inline int sampReadVariableFromConfig(const char* name)
+{
+    return reinterpret_cast<int(__thiscall*)(uintptr_t, const char*)>(sampGetBase() + SAMP_OFFSET[17])
+        (sampGetConfigPtr(), name);
 }
 
 #undef SAMP_OFFSET
