@@ -53,7 +53,7 @@ void ChatImGui::rebuildFonts()
 {
 	std::string fontPath(256, '\0');
 
-	if (SHGetSpecialFolderPathA(GetActiveWindow(), (LPSTR)(fontPath.data()), CSIDL_FONTS, false))
+	if (SHGetSpecialFolderPathA(GetActiveWindow(), fontPath.data(), CSIDL_FONTS, false))
 	{
 		fontPath.resize(fontPath.find('\0'));
 		std::string fontName{ sampGetChatFontName() };
@@ -105,15 +105,18 @@ void ChatImGui::renderLine(ChatImGui::chat_line_t& data)
 	ImVec4 color(1, 1, 1, 1);
 	for (auto& line : data)
 	{
-		if (line.type == eLineMetadataType::COLOR)
-			color = *reinterpret_cast<ImVec4*>(line.data);
-		else if (line.type == eLineMetadataType::TIMESTAMP)
+		switch (line.type)
 		{
+		case eLineMetadataType::COLOR:
+			color = *reinterpret_cast<ImVec4*>(line.data);
+			break;
+		case eLineMetadataType::TIMESTAMP:
 			if (sampIsTimestampEnabled())
 				renderText(color, line.data, true);
-		}
-		else
+			break;
+		case eLineMetadataType::TEXT:
 			renderText(color, line.data);
+		}
 	}
 	ImGui::NewLine();
 }
@@ -154,7 +157,7 @@ void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText,
 	ChatImGui::chat_line_t output;
 
 	uint8_t r_ = ((textColor >> 16) & 0xff), g_ = ((textColor >> 8) & 0xff), b_ = (textColor & 0xff);
-	ImVec4 color((float)r_ / 255.f, (float)g_ / 255.f, (float)b_ / 255.f, 1);
+	ImVec4 color(r_ / 255.f, g_ / 255.f, b_ / 255.f, 1);
 	ChatImGui::pushColorToBuffer(output, color);
 
 	{
@@ -172,7 +175,7 @@ void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText,
 	if (nType == 2)
 	{
 		uint8_t r_ = ((prefixColor >> 16) & 0xff), g_ = ((prefixColor >> 8) & 0xff), b_ = (prefixColor & 0xff);
-		ImVec4 colorPrefix((float)r_ / 255.f, (float)g_ / 255.f, (float)b_ / 255.f, 1);
+		ImVec4 colorPrefix(r_ / 255.f, g_ / 255.f, b_ / 255.f, 1);
 		ChatImGui::pushColorToBuffer(output, colorPrefix);
 		std::string prefix(szPrefix);
 		prefix += ": ";
@@ -201,7 +204,7 @@ void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText,
 		{
 			auto clr_ = stoi(clr.str(), nullptr, 16);
 			uint8_t r = ((clr_ >> 16) & 0xff), g = ((clr_ >> 8) & 0xff), b = (clr_ & 0xff);
-			color = ImVec4((float)r / 255.f, (float)g / 255.f, (float)b / 255.f, 1);
+			color = ImVec4(r / 255.f, g / 255.f, b / 255.f, 1);
 			ChatImGui::pushColorToBuffer(output, color);
 		}
 

@@ -49,7 +49,7 @@ public:
 
 	inline void				scrollToBottom() { mWhereToScroll = 0.f; }
 	inline void				scrollTo(int to) {
-		mWhereToScroll += (float)to;
+		mWhereToScroll += to;
 		if (mWhereToScroll > 0.f)
 			mWhereToScroll = 0;
 		else if (mWhereToScroll < -100.f)
