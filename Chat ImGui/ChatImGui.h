@@ -1,6 +1,6 @@
 #pragma once
 
-#define CHATIMGUI_VERSION 1.0
+#define CHATIMGUI_VERSION 110 // 1.1.0
 
 class ChatImGui
 {
@@ -19,6 +19,8 @@ private:
 
 	float				mCurrentFontSize = 18; // WIP, not sure if it's such a needy functionality
 	float				mWhereToScroll = 0.f;
+
+	int					mLinesCount;
 
 public:
 	enum eLineMetadataType : uint8_t { COLOR, TIMESTAMP, TEXT };
@@ -62,6 +64,11 @@ public:
 
 	inline bool				isChatAlphaEnabled() { return mChatAlphaEnabled; }
 	inline void				switchChatAlphaState() { mChatAlphaEnabled = !mChatAlphaEnabled; }
+
+	inline uint32_t			getLinesCount() { return mLinesCount; }
+	inline void				increaseLinesCount() { mLinesCount++; }
+	
+	auto					eraseFirstLine();
 };
 
 inline ChatImGui gChat;

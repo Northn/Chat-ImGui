@@ -4,6 +4,8 @@
 
 void ChatImGui::initialize()
 {
+	mChatLines.reserve(150);
+
 	mChatConstrHook = new rtdhook(sampGetChatConstr(), &CChat__CChat);
 	mChatOnLostDeviceHook = new rtdhook(sampGetChatOnLostDevice(), &CChat__OnLostDevice, 9);
 	mChatAddEntryHook = new rtdhook(sampGetAddEntryFuncPtr(), &CChat__AddEntry);
@@ -45,9 +47,12 @@ void ChatImGui::initialize()
 			sampRegisterChatCommand("icc", CMDPROC__ICC);
 
 			mChatAlphaEnabled = sampReadVariableFromConfig("alphachat");
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Idk why, but SAMP not pushing pagesize to struct immediately
+
+			mLinesCount = sampGetPagesize();
 		}
 	).detach();
-
 }
 
 void ChatImGui::rebuildFonts()
@@ -140,6 +145,23 @@ void ChatImGui::pushTimestampToBuffer(ChatImGui::chat_line_t& line, std::string_
 	pushTextToBuffer(line, timestamp, true);
 }
 
+auto ChatImGui::eraseFirstLine()
+{
+	auto ptr = gChat.mChatLines.begin();
+
+	for (auto subPtr = ptr->begin(); subPtr != ptr->end(); subPtr++)
+	{
+		if (subPtr->data == nullptr) continue;
+
+		if (subPtr->type == ChatImGui::eLineMetadataType::COLOR)
+			delete(subPtr->data);
+		else
+			delete[](subPtr->data);
+	}
+
+	return gChat.mChatLines.erase(ptr);
+}
+
 void* __fastcall CChat__CChat(void* ptr, void*, IDirect3DDevice9* pDevice, void* pFontRenderer, const char* pChatLogPath)
 {
 	ImGui::CreateContext();
@@ -223,6 +245,10 @@ void __fastcall CChat__AddEntry(void* ptr, void*, int nType, const char* szText,
 	}
 	gChat.mChatLines.push_back(output);
 
+	gChat.increaseLinesCount();
+	if (gChat.getLinesCount() > 150)
+		gChat.eraseFirstLine();
+
 	reinterpret_cast<void(__thiscall*)(void*, uint32_t, const char*, const char*, uint32_t, uint32_t)>(gChat.getAddEntryHook()->getTrampoline())
 		(ptr, nType, szText, szPrefix, textColor, prefixColor);
 }
@@ -232,8 +258,8 @@ void __fastcall CChat__Render(void* ptr, void*)
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-	ImGui::SetNextWindowPos(ImVec2(36, 5));
-	ImGui::SetNextWindowSize(ImVec2(4096, (ImGui::GetTextLineHeightWithSpacing() * sampGetPagesize()) - 9));
+	ImGui::SetNextWindowPos(ImVec2(36, 18));
+	ImGui::SetNextWindowSize(ImVec2(4096, ImGui::GetTextLineHeightWithSpacing() * (sampGetPagesize() - 1)));
 	if (gChat.isChatAlphaEnabled())
 	{
 		auto& alpha = ImGui::GetStyle().Alpha;
@@ -251,10 +277,17 @@ void __fastcall CChat__Render(void* ptr, void*)
 	if (ImGui::Begin("Chat ImGui", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar))
 	{
 		static ImGuiListClipper clipper;
-		clipper.Begin(gChat.mChatLines.size());
+		auto linesCount = gChat.getLinesCount();
+		clipper.Begin(linesCount);
 		while (clipper.Step())
 			for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
-				ChatImGui::renderLine(gChat.mChatLines[row]);
+			{
+				auto elementId = row - linesCount + gChat.mChatLines.size();
+				if (elementId >= gChat.mChatLines.size())
+					ImGui::NewLine();
+				else
+					ChatImGui::renderLine(gChat.mChatLines[row - gChat.getLinesCount() + gChat.mChatLines.size()]);
+			}
 
 		if (gChat.shouldWeScrollToBottom())
 		{
@@ -270,6 +303,9 @@ void __fastcall CChat__Render(void* ptr, void*)
 		}
 		else
 			ImGui::SetScrollY(ImGui::GetScrollMaxY() + (ImGui::GetTextLineHeightWithSpacing() * gChat.whereToScroll()));
+
+		if (ImGui::GetScrollY() < ImGui::GetScrollMaxY() - ImGui::GetTextLineHeightWithSpacing() * 120)
+			ImGui::SetScrollY(ImGui::GetScrollMaxY());
 
 		ImGui::End();
 	}
@@ -330,16 +366,7 @@ void CMDPROC__AlphaChat(const char*)
 void CMDPROC__ICC(const char*)
 {
 	for (auto ptr = gChat.mChatLines.begin(); ptr != gChat.mChatLines.end();)
-	{
-		for (auto subPtr = ptr->begin(); subPtr != ptr->end(); subPtr++)
-		{
-			if (subPtr->data == nullptr) continue;
+		ptr = gChat.eraseFirstLine();
 
-			if (subPtr->type == ChatImGui::eLineMetadataType::COLOR)
-				delete(subPtr->data);
-			else
-				delete[](subPtr->data);
-		}
-		ptr = gChat.mChatLines.erase(ptr);
-	}
+	memset(reinterpret_cast<void*>(sampGetChatInfoPtr() + 0x132), 0x0, 0xFC);
 }
