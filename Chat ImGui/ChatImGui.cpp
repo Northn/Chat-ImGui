@@ -39,16 +39,12 @@ void ChatImGui::initialize()
 
 	std::thread([&]
 		{
-			uintptr_t sampChatInput = sampGetInputInfoPtr();
-			while (!sampChatInput)
-				sampChatInput = sampGetInputInfoPtr();
+			while (!isSampAvailable()) {}
 
 			sampRegisterChatCommand("alphachat", CMDPROC__AlphaChat);
 			sampRegisterChatCommand("icc", CMDPROC__ICC);
 
 			mChatAlphaEnabled = sampReadVariableFromConfig("alphachat");
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Idk why, but SAMP not pushing pagesize to struct immediately
 
 			mLinesCount = sampGetPagesize();
 		}

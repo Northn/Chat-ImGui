@@ -12,11 +12,11 @@ enum SAMPVER {
 
 typedef void(__cdecl* CMDPROC)(const char*);
 
-const uintptr_t samp_addressess[][18]
+const uintptr_t samp_addressess[][19]
 {
-    // CChat, ::CChat, ::OnLostDevice, ::OnResetDevice, ::Draw->call ::Render, getChatFontName, ::AddEntry, ::Scroll->call DXUT__Scroll, ::ScrollToBottom, ::PageUp, ::PageDown, CInput, CInput::AddCommand, CConfig?, CConfig?::SaveVariable, , CConfig?::ReadVariable
-    {0x21A0E4, 0x647B0, 0x635D0, 0x64600, 0x642E7, 0xB3D40, 0x64010, 0xB87E7, 0xB3C60, 0x63828, 0x637C0, 0x63700, 0x63760, 0x21A0E8, 0x65AD0, 0x21A0E0, 0x624C0, 0x62250},       // SAMP_037_R1
-    {0x26E8C8, 0x67C00, 0x66A20, 0x67A50, 0x67737, 0xC5C00, 0x67460, 0xCA970, 0xC5B20, 0x66C78, 0x66C10, 0x66B50, 0x66BB0, 0x26E8CC, 0x69000, 0x26E8C4, 0x65910, 0x656A0}        // SAMP_037_R3_1
+    // CChat, ::CChat, ::OnLostDevice, ::OnResetDevice, ::Draw->call ::Render, getChatFontName, ::AddEntry, ::Scroll->call DXUT__Scroll, ::ScrollToBottom, ::PageUp, ::PageDown, CInput, CInput::AddCommand, CConfig?, CConfig?::SaveVariable, CConfig?::ReadVariable, CNetGame
+    {0x21A0E4, 0x647B0, 0x635D0, 0x64600, 0x642E7, 0xB3D40, 0x64010, 0xB87E7, 0xB3C60, 0x63828, 0x637C0, 0x63700, 0x63760, 0x21A0E8, 0x65AD0, 0x21A0E0, 0x624C0, 0x62250, 0x21A0F8},       // SAMP_037_R1
+    {0x26E8C8, 0x67C00, 0x66A20, 0x67A50, 0x67737, 0xC5C00, 0x67460, 0xCA970, 0xC5B20, 0x66C78, 0x66C10, 0x66B50, 0x66BB0, 0x26E8CC, 0x69000, 0x26E8C4, 0x65910, 0x656A0, 0x26E8DC}        // SAMP_037_R3_1
 };
 
 const uintptr_t chat_nops[][2]
@@ -64,6 +64,11 @@ inline SAMPVER sampGetVersion()
 }
 
 #define SAMP_OFFSET samp_addressess[sampGetVersion() - 2]
+
+inline bool isSampAvailable()
+{
+    return *reinterpret_cast<void**>(sampGetBase() + SAMP_OFFSET[18]) != nullptr;
+}
 
 inline uintptr_t sampGetChatInfoPtr()
 {
