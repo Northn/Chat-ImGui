@@ -118,6 +118,9 @@ static void ImGui_ImplDX9_SetupRenderState(ImDrawData* draw_data)
         g_pd3dDevice->SetTransform(D3DTS_VIEW, &mat_identity);
         g_pd3dDevice->SetTransform(D3DTS_PROJECTION, &mat_projection);
     }
+
+    // ENB compatibility
+    g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, false);
 }
 
 // Render function.

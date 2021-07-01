@@ -62,9 +62,6 @@
     <ClCompile Include="libs\imgui\imgui.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="libs\imgui\imgui_demo.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="libs\imgui\imgui_draw.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
