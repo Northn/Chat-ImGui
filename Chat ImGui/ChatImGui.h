@@ -1,5 +1,7 @@
 #pragma once
 
+#define CHATIMGUI_VERSION 1.0
+
 class ChatImGui
 {
 private:
@@ -74,4 +76,5 @@ int __fastcall CChat__ScrollToBottom(void* ptr, void*);
 int __fastcall CChat__PageUp(void* ptr, void*);
 int __fastcall CChat__PageDown(void* ptr, void*);
 
-void CMDPROC__AlphaChat(const char* text);
+void CMDPROC__AlphaChat(const char*);
+void CMDPROC__ICC(const char*);

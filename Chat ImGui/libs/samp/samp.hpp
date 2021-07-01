@@ -145,6 +145,11 @@ inline int sampGetChatDisplayMode()
     return *reinterpret_cast<int*>(sampGetChatInfoPtr() + 0x8);
 }
 
+inline void sampSetChatDisplayMode(int mode)
+{
+    *reinterpret_cast<int*>(sampGetChatInfoPtr() + 0x8) = mode;
+}
+
 inline uint32_t sampGetPagesize()
 {
     return *reinterpret_cast<uint32_t*>(sampGetChatInfoPtr());

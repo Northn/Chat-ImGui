@@ -42,6 +42,7 @@ void ChatImGui::initialize()
 				sampChatInput = sampGetInputInfoPtr();
 
 			sampRegisterChatCommand("alphachat", CMDPROC__AlphaChat);
+			sampRegisterChatCommand("icc", CMDPROC__ICC);
 
 			mChatAlphaEnabled = sampReadVariableFromConfig("alphachat");
 		}
@@ -312,7 +313,7 @@ int __fastcall CChat__PageDown(void* ptr, void*)
 	return reinterpret_cast<int(__thiscall*)(void*)>(gChat.getPageDownHook()->getTrampoline())(ptr);
 }
 
-void CMDPROC__AlphaChat(const char* text)
+void CMDPROC__AlphaChat(const char*)
 {
 	gChat.switchChatAlphaState();
 	bool enabled = gChat.isChatAlphaEnabled();
@@ -324,4 +325,21 @@ void CMDPROC__AlphaChat(const char* text)
 
 	if (!enabled)
 		ImGui::GetStyle().Alpha = 1.f;
+}
+
+void CMDPROC__ICC(const char*)
+{
+	for (auto ptr = gChat.mChatLines.begin(); ptr != gChat.mChatLines.end();)
+	{
+		for (auto subPtr = ptr->begin(); subPtr != ptr->end(); subPtr++)
+		{
+			if (subPtr->data == nullptr) continue;
+
+			if (subPtr->type == ChatImGui::eLineMetadataType::COLOR)
+				delete(subPtr->data);
+			else
+				delete[](subPtr->data);
+		}
+		ptr = gChat.mChatLines.erase(ptr);
+	}
 }
