@@ -1,6 +1,6 @@
 #pragma once
 
-#define CHATIMGUI_VERSION 110 // 1.1.0
+#define CHATIMGUI_VERSION 120 // 1.2.0
 
 #define USE_ONLY_OLD_OUTLINE_REALISATION 0
 
