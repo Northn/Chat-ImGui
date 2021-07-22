@@ -85,8 +85,10 @@ void ChatImGui::renderOutline(const char* text__)
 	{
 		auto pos = ImGui::GetCursorScreenPos();
 		auto drawlist = ImGui::GetBackgroundDrawList();
+		ImU32 color = static_cast<ImU32>((ImGui::GetStyle().Alpha - 0.1f) * 255.f);
+		color <<= 24;
 
-#define DRAW_TEXT drawlist->AddText(pos, 0xff'00'00'00, text__)
+#define DRAW_TEXT drawlist->AddText(pos, color, text__)
 
 #if !USE_ONLY_OLD_OUTLINE_REALISATION
 		if (*reinterpret_cast<int*>(0xC17044) > 1280)
@@ -323,14 +325,14 @@ void __fastcall CChat__Render(void* ptr, void*)
 
 		if (gChat.shouldWeScrollToBottom())
 		{
-			float current_scroll = ImGui::GetScrollY(), max_scroll = ImGui::GetScrollMaxY();
-			if (max_scroll - current_scroll > 300.f)
+			float current_scroll = ImGui::GetScrollY(), max_scroll = ImGui::GetScrollMaxY(), diff_scroll = max_scroll - current_scroll;
+			if (diff_scroll > 300.f)
 				ImGui::SetScrollY(current_scroll + 30.f);
-			else if (max_scroll - current_scroll > 150.f)
+			else if (diff_scroll > 150.f)
 				ImGui::SetScrollY(current_scroll + 10.f);
-			else if (max_scroll - current_scroll > 0.f)
+			else if (diff_scroll > 0.f)
 				ImGui::SetScrollY(current_scroll + 5.f);
-			else if (max_scroll - current_scroll < 0.f)
+			else if (diff_scroll < 0.f)
 				ImGui::SetScrollY(max_scroll);
 		}
 		else
