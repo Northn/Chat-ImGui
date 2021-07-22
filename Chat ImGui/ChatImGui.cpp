@@ -73,6 +73,8 @@ void ChatImGui::rebuildFonts()
 		mCurrentFontSize = sampGetFontsize();
 		io.Fonts->AddFontFromFileTTF(fontPath.c_str(), mCurrentFontSize - 2, nullptr, ranges.Data);
 		io.Fonts->Build();
+
+		ImGui::GetStyle().ItemSpacing.y = 2;
 	}
 }
 
@@ -81,16 +83,50 @@ void ChatImGui::renderOutline(const char* text__)
 
 	if (sampGetChatDisplayMode() == 2) // If outlines are enabled
 	{
-		auto pos = ImGui::GetCursorPos();
-		ImGui::SetCursorPos(ImVec2(pos.x + 1, pos.y));
-		ImGui::TextColored(ImVec4(0, 0, 0, 1), text__);
-		ImGui::SetCursorPos(ImVec2(pos.x - 1, pos.y));
-		ImGui::TextColored(ImVec4(0, 0, 0, 1), text__);
-		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 1));
-		ImGui::TextColored(ImVec4(0, 0, 0, 1), text__);
-		ImGui::SetCursorPos(ImVec2(pos.x, pos.y - 1));
-		ImGui::TextColored(ImVec4(0, 0, 0, 1), text__);
-		ImGui::SetCursorPos(pos);
+		auto pos = ImGui::GetCursorScreenPos();
+		auto drawlist = ImGui::GetBackgroundDrawList();
+
+#define DRAW_TEXT drawlist->AddText(pos, 0xff'00'00'00, text__)
+
+#if !USE_ONLY_OLD_OUTLINE_REALISATION
+		if (*reinterpret_cast<int*>(0xC17044) > 1280)
+		{
+			pos.y -= 2;
+			DRAW_TEXT;
+			pos.x -= 1;
+			pos.y += 1;
+			DRAW_TEXT;
+			pos.x += 2;
+			DRAW_TEXT;
+			pos.x -= 1;
+			pos.y += 3;
+			DRAW_TEXT;
+			pos.x -= 1;
+			pos.y -= 1;
+			DRAW_TEXT;
+			pos.x += 2;
+			DRAW_TEXT;
+			pos.y -= 1;
+			pos.x -= 3;
+			DRAW_TEXT;
+			pos.x += 4;
+			DRAW_TEXT;
+		}
+		else
+#endif
+		{
+			pos.y -= 1;
+			DRAW_TEXT;
+			pos.y += 2;
+			DRAW_TEXT;
+			pos.y -= 1;
+			pos.x -= 1;
+			DRAW_TEXT;
+			pos.x += 2;
+			DRAW_TEXT;
+		}
+#undef DRAW_TEXT
+
 	}
 }
 
@@ -255,7 +291,7 @@ void __fastcall CChat__Render(void* ptr, void*)
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	ImGui::SetNextWindowPos(ImVec2(36, 18));
-	ImGui::SetNextWindowSize(ImVec2(4096, ImGui::GetTextLineHeightWithSpacing() * (sampGetPagesize() - 1)));
+	ImGui::SetNextWindowSize(ImVec2(4096, ImGui::GetTextLineHeightWithSpacing() * sampGetPagesize()));
 	if (gChat.isChatAlphaEnabled())
 	{
 		auto& alpha = ImGui::GetStyle().Alpha;

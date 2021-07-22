@@ -2,6 +2,8 @@
 
 #define CHATIMGUI_VERSION 110 // 1.1.0
 
+#define USE_ONLY_OLD_OUTLINE_REALISATION 0
+
 class ChatImGui
 {
 private:
