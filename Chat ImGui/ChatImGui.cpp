@@ -4,7 +4,7 @@
 
 void ChatImGui::initialize()
 {
-	mChatLines.reserve(150);
+	mChatLines.reserve(152);
 
 	mChatConstrHook = new rtdhook(sampGetChatConstr(), &CChat__CChat);
 	mChatOnLostDeviceHook = new rtdhook(sampGetChatOnLostDevice(), &CChat__OnLostDevice, 9);
@@ -363,6 +363,10 @@ void CMDPROC__ICC(const char*)
 {
 	for (auto ptr = gChat.mChatLines.begin(); ptr != gChat.mChatLines.end();)
 		ptr = gChat.eraseFirstLine();
+
+	ChatImGui::chat_line_t line;
+	for (auto i = 0; i < 150; i++)
+		gChat.mChatLines.push_back(line);
 
 	memset(reinterpret_cast<void*>(sampGetChatInfoPtr() + 0x132), 0x0, 0xFC);
 }

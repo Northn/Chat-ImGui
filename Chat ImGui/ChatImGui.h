@@ -20,7 +20,7 @@ private:
 	float				mCurrentFontSize = 18; // WIP, not sure if it's such a needy functionality
 	float				mWhereToScroll = 0.f;
 
-	int					mLinesCount;
+	size_t				mLinesCount = 0;
 
 public:
 	enum eLineMetadataType : uint8_t { COLOR, TIMESTAMP, TEXT };
